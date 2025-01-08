@@ -1,0 +1,133 @@
+/* 全局样式 */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0px;
+    padding: 0;
+    line-height: 1.6;
+}
+
+/* 导航栏样式 */
+.navbar {
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    padding: 10px;
+    background-color: #333;
+    color: white;
+}
+
+.navbar a {
+    margin-right: 15px;
+    color: white;
+    text-decoration: none;
+}
+
+.navbar a:hover {
+    text-decoration: underline;
+}
+
+/* 用户信息和登出按钮的容器 */
+.user-section {
+    margin-left: auto;
+    display: flex;
+    align-items: center;
+}
+
+/* 用户名样式 */
+.user-info {
+    font-weight: bold;
+    margin-right: 15px;
+    color: #5a91ff;
+}
+
+/* 登出按钮样式 */
+.logout-button {
+    background-color: #ff4444;
+    color: white;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.logout-button:hover {
+    background-color: #ff0000;
+}
+
+/* 自定义Tab样式 */
+.nav-tabs .nav-link {
+    border: 1px solid #ddd;
+    border-radius: 5px 5px 0 0;
+    color: #333;
+}
+
+.nav-tabs .nav-link.active {
+    background-color: #007BFF;
+    color: white;
+}
+
+
+.time-element {
+    top: 10px;
+    z-index: 11;
+    position: absolute;
+    right: 10px;
+    color: rgb(69, 67, 67)
+}
+
+.navbar img {
+    width: 60px;
+}
+
+
+.tab-container {
+    display: flex;
+    border-bottom: 2px solid #ddd;
+    margin-bottom: 20px;
+}
+
+.tab {
+    padding: 10px 20px;
+    cursor: pointer;
+    border: none;
+    border-bottom: 2px solid transparent;
+    background: none;
+    font-size: 16px;
+}
+
+.tab.active {
+    border-bottom: 2px solid #007bff;
+    color: #007bff;
+    font-weight: bold;
+}
+
+/* 内容区域样式 */
+.tab-content {
+    display: none;
+    padding: 20px;
+    border: 1px solid #ddd;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+/* 评论样式 */
+.comment-box {
+    border: 1px solid #ddd;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+
+/* 移除 pagination 的 (current) */
+.pagination .active .page-link {
+    font-weight: bold;
+    color: white;
+    background-color: #007bff; /* 自定义颜色 */
+}
+
+.pagination .page-link::after {
+    content: none !important; /* ✅ 直接移除 (current) 文本 */
+}

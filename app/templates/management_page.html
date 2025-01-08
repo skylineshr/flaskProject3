@@ -1,0 +1,71 @@
+{% extends "base.html" %}
+{% block content %}
+<h2>管理页面</h2>
+
+<!-- 关于我信息表单 -->
+<h3>关于我</h3>
+<form method="POST" action="{{ url_for('main.management_page') }}">
+    {{ about_me_form.hidden_tag() }}
+    <input type="hidden" name="form_type" value="about_me">
+    <p>{{ about_me_form.name.label }} {{ about_me_form.name }}</p>
+    <p>{{ about_me_form.hometown.label }} {{ about_me_form.hometown }}</p>
+    <p><button type="submit" name="form_submit" value="submit_about_me" class="btn btn-primary">保存关于我</button></p>
+</form>
+
+<!-- 工作经历表单 -->
+<h3>Work Experience</h3>
+<form method="POST" action="{{ url_for('main.management_page') }}">
+    {{ work_experience_form.hidden_tag() }}
+    <input type="hidden" name="form_submit" value="submit_work_experience">
+
+    <!-- Company Name -->
+    <p>{{ work_experience_form.company_name.label }} {{ work_experience_form.company_name }}</p>
+
+    <!-- Start Date with Date Picker -->
+    <p>{{ work_experience_form.start_date.label }}
+        <input type="date" name="{{ work_experience_form.start_date.name }}"
+               value="{{ work_experience_form.start_date.data if work_experience_form.start_date.data else '' }}">
+    </p>
+
+    <!-- End Date with Date Picker -->
+    <p>{{ work_experience_form.end_date.label }}
+        <input type="date" name="{{ work_experience_form.end_date.name }}"
+               value="{{ work_experience_form.end_date.data if work_experience_form.end_date.data else '' }}">
+    </p>
+
+    <!-- Submit Button -->
+    <p><button type="submit" class="btn btn-primary">保存工作经历</button></p>
+</form>
+
+
+
+<!-- 教育经历表单 -->
+<h3>edu exp</h3>
+<form method="POST" action="{{ url_for('main.management_page') }}">
+    {{ education_experience_form.hidden_tag() }}
+    <input type="hidden" name="form_type" value="education_experience">
+    <p>{{ education_experience_form.school_name.label }} {{ education_experience_form.school_name }}</p>
+    <p>{{ education_experience_form.start_date.label }}
+        <input type="date" name="{{ education_experience_form.start_date.name }}"
+            value="{{ education_experience_form.start_date.data if education_experience_form.start_date.data else '' }}">
+    </p>
+    <p>{{ education_experience_form.end_date.label }}
+        <input type = "date" name ="{{ education_experience_form.end_date.name}}"
+               value="{{ education_experience_form.end_date.date if education_experience_form.end_date.date else '' }}">
+    </p>
+    <p>{{ education_experience_form.learn_details.label }} {{ education_experience_form.learn_details }}</p>
+    <p><button type="submit" name="form_submit" value="submit_education_experience" class="btn btn-primary">保存教育经历</button></p>
+</form>
+
+
+<!-- 技能表单 -->
+<h3>添加技能</h3>
+<form method="POST" action="{{ url_for('main.management_page') }}">
+    {{ skill_form.hidden_tag() }}
+    <input type="hidden" name="form_type" value="skill">
+    <p>{{ skill_form.category.label }} {{ skill_form.category }}</p>
+    <p>{{ skill_form.title.label }} {{ skill_form.title }}</p>
+    <p>{{ skill_form.description.label }} {{ skill_form.description }}</p>
+    <p><button type="submit" name="form_submit" value="submit_skill" class="btn btn-primary">保存技能</button></p>
+</form>
+{% endblock %}

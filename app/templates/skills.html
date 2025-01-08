@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% block content %}
+
+    <!-- Tab 导航栏 -->
+    <div class="tab-container">
+        <button class="tab active" onclick="switchTab(event, 'computerSkills')">Computer Skills</button>
+        <button class="tab" onclick="switchTab(event, 'skiingSkills')">Snowboarding Skills</button>
+    </div>
+
+    <!-- 计算机技能内容 -->
+    <div class="tab-content active" id="computerSkills">
+        <h3>Computer Skills</h3>
+        {% for skill in skills_computer %}
+            <p><strong>{{ skill.title }}</strong></p>
+            <p>{{ skill.description }}</p>
+            {% if current_user.is_admin %}
+                <form method="POST" action="{{ url_for('main.delete_record', model_name='skill', item_id=skill.id) }}">
+                    {{ skill_form.hidden_tag() }}
+                    <button type="submit" onclick="return confirm('确认删除该技能？')" class="btn btn-danger">Delete</button>
+                </form>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- 滑雪技能内容 -->
+    <div class="tab-content" id="skiingSkills">
+        <h3>Snowboarding Skills</h3>
+        {% for skill in skills_skiing %}
+            <p><strong>{{ skill.title }}</strong></p>
+            <p>{{ skill.description }}</p>
+            {% if current_user.is_admin %}
+                <form method="POST" action="{{ url_for('main.delete_record', model_name='skill', item_id=skill.id) }}">
+                    {{ skill_form.hidden_tag() }}
+                    <button type="submit" onclick="return confirm('确认删除该技能？')" class="btn btn-danger">Delete</button>
+                </form>
+            {% endif %}
+        {% endfor %}
+    </div>
+
+    <!-- 评论展示 -->
+    <h3>User Comments</h3>
+    <div id="comments-list">
+        {% for comment in comments %}
+            <div id="comment-{{ comment.id }}" class="comment-box">
+                <p><strong>Comment:</strong> {{ comment.content }}</p>
+                <p>User: {{ comment.user.username }} | Time: {{ comment.date_posted.strftime('%Y-%m-%d %H:%M') }}</p>
+                {% if current_user.is_admin or comment.user_id == comment.user.id %}
+                    <!-- ✅ 删除按钮已适配 AJAX -->
+                    <button class="btn btn-danger delete-comment-btn" data-comment-id="{{ comment.id }}">
+                        Delete Comment
+                    </button>
+                {% endif %}
+            </div>
+        {% endfor %}
+    </div>
+
+    <!-- 分页 -->
+    <div class="pagination">
+        <div class="page-links">
+            {{ pagination.links }}
+            {{ pagination.info }}
+        </div>
+    </div>
+
+    <!-- ✅ 评论表单 (已适配 AJAX) -->
+    <h3>Your Comment</h3>
+    <form id="comment-form" data-page="skills">
+        {{ comment_form.hidden_tag() }}
+        <p>{{ comment_form.content.label }} <input type="text" id="comment-content" name="content" required></p>
+        <input type="hidden" name="csrf_token" value="{{ comment_form.csrf_token._value() }}">
+        <p><button type="submit" class="btn btn-primary">Submit Comment</button></p>
+    </form>
+
+    <!-- JavaScript 实现Tab切换 -->
+    <script>
+        function switchTab(event, tabId) {
+            var contents = document.getElementsByClassName("tab-content");
+            var tabs = document.getElementsByClassName("tab");
+
+            for (var i = 0; i < contents.length; i++) {
+                contents[i].classList.remove("active");
+            }
+
+            for (var i = 0; i < tabs.length; i++) {
+                tabs[i].classList.remove("active");
+            }
+
+            document.getElementById(tabId).classList.add("active");
+            event.currentTarget.classList.add("active");
+        }
+    </script>
+
+{% endblock %}
