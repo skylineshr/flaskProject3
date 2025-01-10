@@ -1,8 +1,10 @@
 from app import db
 from flask_login import UserMixin
 from app import login_manager, bcrypt
+from datetime import date
+from sqlalchemy import Date
 
-# 用户模型
+# User Model - Represents users in the database
 class User(db.Model, UserMixin):
     id = db.Column(db.Integer, primary_key=True)
     username = db.Column(db.String(20), unique=True, nullable=False)
@@ -10,18 +12,20 @@ class User(db.Model, UserMixin):
     password_hash = db.Column(db.String(128), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
 
+    # Hash the user's password
     def set_password(self, password):
         self.password_hash = bcrypt.generate_password_hash(password).decode('utf-8')
 
+    # Check if the provided password matches the stored hash
     def check_password(self, password):
         return bcrypt.check_password_hash(self.password_hash, password)
 
-# 用户加载器
+# Flask-Login loader function to retrieve a user by ID
 @login_manager.user_loader
 def load_user(user_id):
     return User.query.get(int(user_id))
 
-# 创建管理员账户
+# Function to create an admin account if it doesn't already exist
 def create_admin():
     from app import db, bcrypt
     if not User.query.filter_by(username="heronsun").first():
@@ -30,56 +34,55 @@ def create_admin():
         db.session.add(admin)
         db.session.commit()
 
-# 评论模型
+# Comment Model - Represents user comments on pages
 class Comment(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     content = db.Column(db.Text, nullable=False)
     date_posted = db.Column(db.DateTime, default=db.func.now())
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
     user = db.relationship('User', backref='comments', lazy=True)
-    page = db.Column(db.String(50))  # 'about' 或 'skills'
+    page = db.Column(db.String(50))  # 'about' or 'skills'
     is_deleted = db.Column(db.Boolean, default=False)
 
-    # 封装权限检查方法
+    # Check if a user has permission to delete a comment
     def can_delete(self, user):
-        """检查用户是否有权限删除此评论"""
         return user.is_admin or self.user_id == user.id
 
+    # Soft delete method for comments
     def soft_delete(self):
-        """执行逻辑删除"""
         self.is_deleted = True
 
-# 关于我模型
+# About Me Model - Represents the user's basic information
 class AboutMe(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     hometown = db.Column(db.String(100))
 
-# 工作详细信息模型
+# Work Detail Model - Represents details for a specific work experience
 class WorkDetail(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     work_experience_id = db.Column(db.Integer, db.ForeignKey('work_experience.id'), nullable=False)
     responsibility = db.Column(db.String(200), nullable=False)
-    achievement = db.Column(db.Text, nullable=True)  # 可选
+    achievement = db.Column(db.Text, nullable=True)  # Optional achievement
 
-# 教育经历模型
+# Education Experience Model - Represents the user's educational background
 class EducationExperience(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     school_name = db.Column(db.String(100), nullable=False)
-    start_date = db.Column(db.String(10), nullable=False)
-    end_date = db.Column(db.String(10), nullable=True)
+    start_date = db.Column(db.Date, nullable=False)
+    end_date = db.Column(db.Date, nullable=True)
     learn_details = db.Column(db.String(100), nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-# 工作经历模型
+# Work Experience Model - Represents the user's work history
 class WorkExperience(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     company_name = db.Column(db.String(100), nullable=False)
-    start_date = db.Column(db.String(10), nullable=False)
-    end_date = db.Column(db.String(10), nullable=True)
+    start_date = db.Column(Date, nullable=False)
+    end_date = db.Column(Date, nullable=True)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
 
-# 技能模型
+# Skill Model - Represents the user's skills and expertise
 class Skill(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     category = db.Column(db.String(50), nullable=False)

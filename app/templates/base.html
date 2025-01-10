@@ -7,6 +7,7 @@
     <title>Haoran Sun's CV</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
     <link rel="stylesheet" href="{{ url_for('static', filename='/css/style.css') }}">
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}" type="image/x-icon">
 </head>
 <body>
 <!-- 使用 flexbox 布局 -->
@@ -55,7 +56,9 @@
 <main>
     {% block content %}{% endblock %}
 </main>
-<script src="{{ url_for('static', filename='JavaScript/flashMessages.js') }}"></script>
-<!--  <script src="{{ url_for('static', filename='JavaScript/comments.js') }}"></script> -->
+<script src="{{ url_for('static', filename='javaScript/flashMessages.js') }}"></script>
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+<script src="{{ url_for('static', filename='javaScript/comments.js') }}"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>

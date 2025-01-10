@@ -131,3 +131,65 @@ body {
 .pagination .page-link::after {
     content: none !important; /* ✅ 直接移除 (current) 文本 */
 }
+
+
+/* 居中显示的 Toast 样式 */
+.toast-message {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* 居中对齐 */
+    z-index: 1050;
+    padding: 15px 25px;
+    border-radius: 10px;
+    color: white;
+    font-size: 13px;
+    text-align: center;
+    opacity: 0.95;
+    box-shadow: 0 0 15px rgba(0,0,0,0.3);
+    max-width: 80%;  /* 防止过长 */
+    word-wrap: break-word;
+    transition: all 0.5s ease-in-out;
+}
+
+/* 成功消息 (绿色) */
+.toast-message.success {
+    background-color: #28a745;
+}
+
+/* 错误消息 (红色) */
+.toast-message.error {
+    background-color: #dc3545;
+}
+
+/* static/css/style.css */
+.pagination-btn {
+    margin: 5px;
+    padding: 8px 12px;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    cursor: pointer;
+}
+
+.pagination-btn.active {
+    background-color: #007bff;
+    color: white;
+    border-color: #007bff;
+}
+
+
+/* static/css/style.css */
+
+/* 评论项样式 */
+.comment-item {
+    border-bottom: 1px solid #ccc;
+    padding: 10px;
+    margin-bottom: 10px;
+}
+
+/* 评论时间样式 */
+.comment-item p em {
+    color: #777;
+    font-size: 14px;
+}
+

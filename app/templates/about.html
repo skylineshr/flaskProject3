@@ -2,31 +2,50 @@
 {% block content %}
     <h2>About Me</h2>
 
+    <!-- Basic Information Section -->
     <p><strong>Name:</strong> {{ about_me.name }}</p>
     <p><strong>Hometown:</strong> {{ about_me.hometown }}</p>
 
-    <!-- 教育经历展示 -->
+    <!-- Education Experience Section -->
     <h3>Education Experience</h3>
     {% for edu in education_experiences %}
         <p><strong>School:</strong> {{ edu.school_name }}</p>
         <p>{{ edu.start_date }} - {{ edu.end_date }}</p>
         <p>{{ edu.learn_details }}</p>
         {% if current_user.is_admin %}
+            <!-- Delete button only visible for admins -->
             <button class="btn btn-danger delete-btn" data-id="{{ edu.id }}" data-model="education">
                 Delete
             </button>
         {% endif %}
     {% endfor %}
 
-    <!-- 工作经历展示 -->
+    <!-- Work Experience Section -->
     <h3>Work Experience</h3>
     {% for work in work_experiences %}
         <p><strong>Company:</strong> {{ work.company_name }}</p>
         <p>{{ work.start_date }} - {{ work.end_date }}</p>
         {% if current_user.is_admin %}
+            <!-- Delete button only visible for admins -->
             <button class="btn btn-danger delete-btn" data-id="{{ work.id }}" data-model="work">
                 Delete
             </button>
         {% endif %}
     {% endfor %}
+
+    <!-- Comments Section -->
+    <h3>Comments</h3>
+    <div id="comments-container">
+        <!-- AJAX Loaded Comments Will Appear Here -->
+    </div>
+
+    <!-- Pagination Controls Section -->
+    <div id="pagination-controls" class="mt-3">
+        <!-- AJAX Pagination Buttons Will Appear Here -->
+    </div>
+
+    <!-- Comment Submission Form Section -->
+    <input type="hidden" id="csrf_token" value="{{ csrf_token() }}">
+    <textarea id="new-comment" class="form-control" placeholder="Add a comment"></textarea>
+    <button id="submit-comment" class="btn btn-primary mt-2">Submit Comment</button>
 {% endblock %}

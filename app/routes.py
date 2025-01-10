@@ -6,7 +6,7 @@ from flask_login import login_user, logout_user, current_user, login_required
 from app import bcrypt
 from app.forms import (
     RegistrationForm, AboutMeForm, LoginForm, SkillForm,
-    CommentForm, ManagementForm, WorkExperienceForm, EducationExperienceForm
+    WorkExperienceForm, EducationExperienceForm
 )
 from flask_paginate import get_page_args
 from app.dao import (
@@ -28,8 +28,7 @@ def home():
 def register():
     form = RegistrationForm()
     if form.validate_on_submit():
-        hashed_password = bcrypt.generate_password_hash(form.password.data).decode('utf-8')
-        UserDAO.create_user(form.username.data, form.email.data, hashed_password)
+        UserDAO.create_user(form.username.data, form.email.data, form.password.data)
         flash('Account created successfully!', 'success')
         return redirect(url_for('main.login'))
     return render_template('register.html', form=form)
@@ -82,12 +81,31 @@ def about():
 
 
 # get comments route
-@bp.route("/comments/<page_name>", methods=["GET"])
+@bp.route("/api/comments/<page_name>", methods=["GET"])
 @login_required
 def get_comments(page_name):
-    page_num, per_page, _ = get_page_args(page_parameter="page", per_page_parameter="per_page", per_page=5)
+    page_num = request.args.get("page", 1, type=int)
+    per_page = request.args.get("per_page", 5, type=int)
+
     comments, pagination = CommentDAO.get_comments(page_num, per_page, filter_by_page=page_name)
-    return render_template("comments.html", comments=comments, pagination=pagination)
+    comments_list = [
+        {
+            'id': comment.id,
+            'content': comment.content,
+            'username': comment.user.username,
+            'user_id': comment.user.id,
+            'is_admin': current_user.is_admin,
+            'current_user_id': current_user.id,
+            'created_at': comment.date_posted.strftime("%Y-%m-%d %H:%M:%S")
+        } for comment in comments
+    ]
+
+    return jsonify({
+        'comments': comments_list,
+        'total_pages': pagination.pages,
+        'current_page': pagination.page,
+        'current_user_id': current_user.id
+    })
 
 
 # management comments route(delete and add)
@@ -95,7 +113,7 @@ def get_comments(page_name):
 @login_required
 def manage_comments(page_name):
     data = request.get_json()
-    if "content" in data:
+    if "content" in data and data["content"].strip():
         CommentDAO.add_comment(data['content'], current_user.id, page_name)
         return jsonify({'success': True, 'message': 'Comment added successfully!'})
     elif "comment_id" in data:
@@ -149,58 +167,83 @@ def skills():
 
 
 # management page route
-@bp.route('/management_page', methods=['GET', 'POST'])
+@bp.route('/management_page', methods=['GET'])
 @login_required
 def management_page():
     if not current_user.is_admin:
-        return redirect(url_for('main.home'))
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('main.index'))
 
-    about_me_form = ManagementForm()
+    about_me_form = AboutMeForm()
     work_experience_form = WorkExperienceForm()
     education_experience_form = EducationExperienceForm()
     skill_form = SkillForm()
+    return render_template('management_page.html',
+                           about_me_form=about_me_form,
+                           work_experience_form=work_experience_form,
+                           education_experience_form=education_experience_form,
+                           skill_form=skill_form)
 
+
+@bp.route('/submit_form', methods=['POST'])
+@login_required
+def submit_form():
     form_submit = request.form.get('form_submit')
 
-    if form_submit == "submit_about_me" and about_me_form.validate_on_submit():
-        AboutMeDAO.add_about_me(
-            about_me_form.name.data,
-            about_me_form.hometown.data
-        )
+    if not form_submit:
+        flash("Error: No form submit value received!", "danger")
         return redirect(url_for('main.management_page'))
 
-    elif form_submit == "submit_work_experience" and work_experience_form.validate_on_submit():
-        WorkExperienceDAO.add_work_experience(
-            work_experience_form.company_name.data,
-            work_experience_form.start_date.data,
-            work_experience_form.end_date.data,
-            current_user.id
-        )
-        return redirect(url_for('main.management_page'))
+    if form_submit == "submit_about_me":
+        about_me_form = AboutMeForm(request.form)
+        if about_me_form.validate_on_submit():
+            AboutMeDAO.add_about_me(
+                about_me_form.name.data,
+                about_me_form.hometown.data
+            )
+            flash("About Me updated successfully!", "success")
+        else:
+            flash("Error submitting the About Me form.", "danger")
 
-    elif form_submit == "submit_education_experience" and education_experience_form.validate_on_submit():
-        EducationExperienceDAO.add_education_experience(
-            education_experience_form.school_name.data,
-            education_experience_form.start_date.data,
-            education_experience_form.end_date.data,
-            education_experience_form.learn_details.data,
-            current_user.id
-        )
-        return redirect(url_for('main.management_page'))
+    elif form_submit == "submit_work_experience":
+        work_experience_form = WorkExperienceForm(request.form)
+        if work_experience_form.validate_on_submit():
+            WorkExperienceDAO.add_work_experience(
+                company_name=work_experience_form.company_name.data,
+                start_date=work_experience_form.start_date.data.strftime('%Y-%m-%d'),
+                end_date=work_experience_form.end_date.data.strftime(
+                    '%Y-%m-%d') if work_experience_form.end_date.data else None,
+                user_id=current_user.id
+            )
+            flash("Work Experience updated successfully!", "success")
+        else:
+            flash("Error submitting the Work Experience form.", "danger")
 
-    elif form_submit == "submit_skill" and skill_form.validate_on_submit():
-        SkillDAO.add_skill(
-            skill_form.title.data,
-            skill_form.description.data,
-            skill_form.category.data,
-            current_user.id
-        )
-        return redirect(url_for('main.management_page'))
+    elif form_submit == "submit_education_experience":
+        education_experience_form = EducationExperienceForm(request.form)
+        if education_experience_form.validate_on_submit():
+            EducationExperienceDAO.add_education_experience(
+                school_name=education_experience_form.school_name.data,
+                start_date=education_experience_form.start_date.data,  # ✅ 直接传递 date 对象
+                end_date=education_experience_form.end_date.data,  # ✅ 直接传递 date 对象
+                learn_details=education_experience_form.learn_details.data,
+                user_id=current_user.id
+            )
+            flash("Education Experience updated successfully!", "success")
+        else:
+            flash("Error submitting the Education Experience form.", "danger")
 
-    return render_template(
-        'management_page.html',
-        about_me_form=about_me_form,
-        work_experience_form=work_experience_form,
-        education_experience_form=education_experience_form,
-        skill_form=skill_form
-    )
+    elif form_submit == "submit_skill":
+        skill_form = SkillForm(request.form)
+        if skill_form.validate_on_submit():
+            SkillDAO.add_skill(
+                skill_form.title.data,
+                skill_form.description.data,
+                skill_form.category.data,
+                current_user.id
+            )
+            flash("Skill added successfully!", "success")
+        else:
+            flash("Error submitting the Skill form.", "danger")
+
+    return redirect(url_for('main.management_page'))
