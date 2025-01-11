@@ -26,6 +26,12 @@ body {
     text-decoration: underline;
 }
 
+/* time */
+.time-element {
+    color: white;
+    font-size: 8px;
+}
+
 /* 用户信息和登出按钮的容器 */
 .user-section {
     margin-left: auto;
@@ -193,3 +199,17 @@ body {
     font-size: 14px;
 }
 
+/* time */
+.time-element {
+    color: white;
+}
+
+.catalog {
+    position: fixed;
+    right: 20px;
+    top: 100px;
+    background-color: #f8f9fa;
+    padding: 10px;
+    border-radius: 10px;
+    box-shadow: 0 0 10px rgba(0,0,0,0.1);
+}

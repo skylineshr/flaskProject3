@@ -45,6 +45,7 @@ class CommentForm(FlaskForm):
 class AboutMeForm(FlaskForm):
     name = StringField('Name', validators=[DataRequired()])
     hometown = StringField('Hometown')
+    email = StringField('Email', validators=[DataRequired(), Email()])
     submit = SubmitField('Save')
 
 # Form for adding work experience
@@ -73,8 +74,9 @@ class SkillForm(FlaskForm):
     description = TextAreaField('Description', validators=[DataRequired()])
     submit = SubmitField('Add Skill')
 
-# Form for adding detailed work experience
-class WorkDetailForm(FlaskForm):
-    responsibility = StringField('Responsibility', validators=[DataRequired()])
-    achievement = StringField('Achievement', validators=[Optional()])
-    submit = SubmitField('Save Work Detail')
+# Form for adding a work project under a company
+class WorkProjectForm(FlaskForm):
+    work_experience_id = SelectField('Select Company', coerce=int, validators=[DataRequired()])
+    project_name = StringField('Project Name', validators=[DataRequired(), Length(max=150)])
+    achievement = TextAreaField('Achievement')
+    submit = SubmitField('Add Project')

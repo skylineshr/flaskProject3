@@ -5,6 +5,7 @@
     <!-- Basic Information Section -->
     <p><strong>Name:</strong> {{ about_me.name }}</p>
     <p><strong>Hometown:</strong> {{ about_me.hometown }}</p>
+    <p><strong>Email:</strong> {{ about_me.email }}</p>
 
     <!-- Education Experience Section -->
     <h3>Education Experience</h3>
@@ -12,11 +13,15 @@
         <p><strong>School:</strong> {{ edu.school_name }}</p>
         <p>{{ edu.start_date }} - {{ edu.end_date }}</p>
         <p>{{ edu.learn_details }}</p>
+
         {% if current_user.is_admin %}
-            <!-- Delete button only visible for admins -->
-            <button class="btn btn-danger delete-btn" data-id="{{ edu.id }}" data-model="education">
-                Delete
-            </button>
+            <form method="POST" action="{{ url_for('main.delete_record', model_name='education', item_id=edu.id) }}" style="display:inline;">
+                {{ education_experience_form.hidden_tag() }}
+                <!-- 使用 Font Awesome 删除图标 -->
+                <button type="submit" class="btn btn-link text-danger p-0" onclick="return confirm('Are you sure you want to delete this record?')">
+                    <i class="fa-solid fa-trash-alt"></i>
+                </button>
+            </form>
         {% endif %}
     {% endfor %}
 
@@ -25,13 +30,38 @@
     {% for work in work_experiences %}
         <p><strong>Company:</strong> {{ work.company_name }}</p>
         <p>{{ work.start_date }} - {{ work.end_date }}</p>
-        {% if current_user.is_admin %}
-            <!-- Delete button only visible for admins -->
-            <button class="btn btn-danger delete-btn" data-id="{{ work.id }}" data-model="work">
-                Delete
-            </button>
+
+        <!-- 项目展示 -->
+        <ul>
+            {% for project in work.projects %}
+                <li>
+                    <strong>Project:</strong> {{ project.project_name }}
+                    <br>
+                    <strong>Achievement:</strong> {{ project.achievement }}
+                    {% if current_user.is_admin %}
+                        <!-- 删除项目按钮 -->
+                        <form method="POST" action="{{ url_for('main.delete_record', model_name='project', item_id=project.id) }}" style="display:inline;">
+                            {{ work_experience_form.hidden_tag() }}
+                            <button type="submit" class="btn btn-link text-danger p-0" onclick="return confirm('Are you sure you want to delete this project?')">
+                                <i class="fa-solid fa-trash-alt"></i>
+                            </button>
+                        </form>
+                    {% endif %}
+                </li>
+            {% endfor %}
+        </ul>
+
+        <!-- 如果没有项目，显示删除公司按钮 -->
+        {% if current_user.is_admin and work.projects|length == 0 %}
+            <form method="POST" action="{{ url_for('main.delete_record', model_name='work', item_id=work.id) }}" style="display:inline;">
+                {{ work_experience_form.hidden_tag() }}
+                <button type="submit" class="btn btn-link text-danger p-0" onclick="return confirm('Are you sure you want to delete this company?')">
+                    <i class="fa-solid fa-trash-alt"></i>
+                </button>
+            </form>
         {% endif %}
     {% endfor %}
+
 
     <!-- Comments Section -->
     <h3>Comments</h3>

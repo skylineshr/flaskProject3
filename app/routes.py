@@ -3,15 +3,13 @@ from flask import (
     url_for, request, jsonify
 )
 from flask_login import login_user, logout_user, current_user, login_required
-from app import bcrypt
 from app.forms import (
     RegistrationForm, AboutMeForm, LoginForm, SkillForm,
-    WorkExperienceForm, EducationExperienceForm
+    WorkExperienceForm, EducationExperienceForm, WorkProjectForm
 )
-from flask_paginate import get_page_args
 from app.dao import (
     UserDAO, CommentDAO, SkillDAO, AboutMeDAO, WorkExperienceDAO,
-    EducationExperienceDAO
+    EducationExperienceDAO, WorkProjectDAO
 )
 
 
@@ -76,7 +74,7 @@ def about():
                            about_me=about_me,
                            work_experiences=work_experiences,
                            education_experiences=education_experiences,
-                           education_experience_form=education_experience_form,  # ✅ 传递到模板
+                           education_experience_form=education_experience_form,
                            work_experience_form=work_experience_form)
 
 
@@ -88,6 +86,7 @@ def get_comments(page_name):
     per_page = request.args.get("per_page", 5, type=int)
 
     comments, pagination = CommentDAO.get_comments(page_num, per_page, filter_by_page=page_name)
+
     comments_list = [
         {
             'id': comment.id,
@@ -122,7 +121,7 @@ def manage_comments(page_name):
     return jsonify({'success': False, 'message': 'Invalid operation!'}), 400
 
 
-# delete info(skills, experience)
+# delete info (skills, experience, projects)
 @bp.route('/delete/<model_name>/<int:item_id>', methods=['POST'])
 @login_required
 def delete_record(model_name, item_id):
@@ -132,21 +131,37 @@ def delete_record(model_name, item_id):
     try:
         validate_csrf(csrf_token)
     except CSRFError:
-        return jsonify({'success': False, 'message': 'CSRF Token is invalid or missing!'}), 400
+        flash("CSRF Token is invalid or missing!", "danger")
+        return redirect(request.referrer or url_for('main.management_page'))
 
     if not current_user.is_admin:
-        return jsonify({'success': False, 'message': 'You do not have permission to perform this action!'}), 403
+        flash("You do not have permission to perform this action!", "danger")
+        return redirect(request.referrer or url_for('main.management_page'))
 
+    # 删除逻辑映射表
     model_mapping = {
-        'skill': SkillDAO,
-        'work': WorkExperienceDAO,
-        'education': EducationExperienceDAO
+        'skill': SkillDAO.delete_skill_by_id,
+        'work': WorkExperienceDAO.delete_work_experience_by_id,
+        'education': EducationExperienceDAO.delete_education_experience_by_id,
+        'project': WorkProjectDAO.delete_project
     }
 
-    dao = model_mapping.get(model_name)
-    if dao and dao.delete_by_id(item_id):
-        return jsonify({'success': True, 'message': 'Record deleted successfully!'}), 200
-    return jsonify({'success': False, 'message': 'Invalid record type or record not found.'}), 400
+    # 如果是删除公司，需要检查其下是否还有项目
+    if model_name == 'work':
+        projects = WorkProjectDAO.get_projects_by_work_experience(item_id)
+        if projects:
+            flash("Cannot delete this company as there are existing projects.", "danger")
+            return redirect(request.referrer or url_for('main.management_page'))
+
+    # 执行删除操作
+    delete_method = model_mapping.get(model_name)
+    if delete_method and delete_method(item_id):
+        flash(f'{model_name.capitalize()} deleted successfully!', 'success')
+    else:
+        flash('Invalid record type or record not found.', 'danger')
+
+    return redirect(request.referrer or url_for('main.management_page'))
+
 
 
 # skills page routes
@@ -157,6 +172,9 @@ def skills():
 
     skills_computer = SkillDAO.get_skills_by_category("Computer Skills")
     skills_skiing = SkillDAO.get_skills_by_category("Snowboarding Skills")
+
+    print("Computer Skills: ", skills_computer)
+    print("Snowboarding Skills: ", skills_skiing)
 
     return render_template(
         'skills.html',
@@ -178,11 +196,17 @@ def management_page():
     work_experience_form = WorkExperienceForm()
     education_experience_form = EducationExperienceForm()
     skill_form = SkillForm()
+    work_project_form = WorkProjectForm()
+
+    work_experiences = WorkExperienceDAO.get_all_work_experiences()
+    work_project_form.work_experience_id.choices = [(work.id, work.company_name) for work in work_experiences]
+
     return render_template('management_page.html',
                            about_me_form=about_me_form,
                            work_experience_form=work_experience_form,
                            education_experience_form=education_experience_form,
-                           skill_form=skill_form)
+                           skill_form=skill_form,
+                           work_project_form=work_project_form)
 
 
 @bp.route('/submit_form', methods=['POST'])
@@ -199,7 +223,8 @@ def submit_form():
         if about_me_form.validate_on_submit():
             AboutMeDAO.add_about_me(
                 about_me_form.name.data,
-                about_me_form.hometown.data
+                about_me_form.hometown.data,
+                about_me_form.email.data
             )
             flash("About Me updated successfully!", "success")
         else:
@@ -210,9 +235,8 @@ def submit_form():
         if work_experience_form.validate_on_submit():
             WorkExperienceDAO.add_work_experience(
                 company_name=work_experience_form.company_name.data,
-                start_date=work_experience_form.start_date.data.strftime('%Y-%m-%d'),
-                end_date=work_experience_form.end_date.data.strftime(
-                    '%Y-%m-%d') if work_experience_form.end_date.data else None,
+                start_date=work_experience_form.start_date.data,
+                end_date=work_experience_form.end_date.data if work_experience_form.end_date.data else None,
                 user_id=current_user.id
             )
             flash("Work Experience updated successfully!", "success")
@@ -224,8 +248,8 @@ def submit_form():
         if education_experience_form.validate_on_submit():
             EducationExperienceDAO.add_education_experience(
                 school_name=education_experience_form.school_name.data,
-                start_date=education_experience_form.start_date.data,  # ✅ 直接传递 date 对象
-                end_date=education_experience_form.end_date.data,  # ✅ 直接传递 date 对象
+                start_date=education_experience_form.start_date.data,
+                end_date=education_experience_form.end_date.data,
                 learn_details=education_experience_form.learn_details.data,
                 user_id=current_user.id
             )
@@ -247,3 +271,46 @@ def submit_form():
             flash("Error submitting the Skill form.", "danger")
 
     return redirect(url_for('main.management_page'))
+
+
+# add project routes
+@bp.route('/add_project', methods=['POST'])
+@login_required
+def add_project():
+    if not current_user.is_admin:
+        flash("Unauthorized access", "danger")
+        return redirect(url_for('main.index'))
+
+    work_project_form = WorkProjectForm()
+    work_experiences = WorkExperienceDAO.get_all_work_experiences()
+    work_project_form.work_experience_id.choices = [(work.id, work.company_name) for work in work_experiences]
+
+    if work_project_form.validate_on_submit():
+        work_experience_id = work_project_form.work_experience_id.data
+        project_name = work_project_form.project_name.data
+        achievement = work_project_form.achievement.data
+
+        # 校验公司是否存在
+        if not any(work.id == work_experience_id for work in work_experiences):
+            flash("Invalid company selected.", "danger")
+            return redirect(url_for('main.management_page'))
+
+        # 使用 DAO 层添加项目
+        WorkProjectDAO.add_project(
+            work_experience_id=work_experience_id,
+            project_name=project_name,
+            achievement=achievement
+        )
+        flash("Project added successfully!", "success")
+        return redirect(url_for('main.management_page'))
+
+    flash("Failed to add project. Please check the form.", "danger")
+    return redirect(url_for('main.management_page'))
+
+#delete project
+@bp.route("/delete_project/<int:project_id>", methods=["POST"])
+@login_required
+def delete_project(project_id):
+    if current_user.is_admin:
+        WorkProjectDAO.delete_project(project_id)
+    return redirect(url_for('main.about'))

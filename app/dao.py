@@ -1,7 +1,7 @@
 from app import db
 from flask_paginate import Pagination, get_page_args
 from datetime import datetime, date
-from app.models import Comment, Skill, User, AboutMe, EducationExperience, WorkExperience
+from app.models import Comment, Skill, User, AboutMe, EducationExperience, WorkExperience, WorkProject
 
 
 
@@ -60,13 +60,14 @@ class AboutMeDAO:
         return AboutMe.query.first()
 
     @staticmethod
-    def add_about_me(name, hometown):
+    def add_about_me(name, hometown, email):
         about_me = AboutMe.query.first()  # 检查是否已有记录
         if about_me:
             about_me.name = name
             about_me.hometown = hometown
+            about_me.email = email
         else:
-            about_me = AboutMe(name=name, hometown=hometown)
+            about_me = AboutMe(name=name, hometown=hometown, email=email)
             db.session.add(about_me)
         db.session.commit()
         return about_me
@@ -95,31 +96,21 @@ class SkillDAO:
         return False
 
 
-# control work_experience db
+# control WorkExperience db
 class WorkExperienceDAO:
     @staticmethod
     def get_all_work_experiences():
+        """获取所有工作经历记录"""
         return WorkExperience.query.all()
 
     @staticmethod
     def add_work_experience(company_name, start_date, user_id, end_date=None):
-        # 确保 user_id 是整数
-        if not isinstance(user_id, int):
-            raise ValueError("user_id must be an integer.")
+        """添加工作经历记录"""
+        if not isinstance(start_date, date):
+            raise ValueError("start_date must be a date object.")
+        if end_date and not isinstance(end_date, date):
+            raise ValueError("end_date must be a date object.")
 
-        # 确保 start_date 和 end_date 是 datetime.date 类型
-        if isinstance(start_date, date):
-            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-        elif not isinstance(start_date, date):
-            raise ValueError("start_date must be a date object or a valid date string.")
-
-        if end_date:
-            if isinstance(end_date, date):
-                end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-            elif not isinstance(end_date, date):
-                raise ValueError("end_date must be a date object or a valid date string.")
-
-        # 创建新的工作经历记录
         work_experience = WorkExperience(
             company_name=company_name,
             start_date=start_date,
@@ -132,9 +123,17 @@ class WorkExperienceDAO:
 
     @staticmethod
     def delete_work_experience_by_id(work_experience_id):
-        workExperience = WorkExperience.query.get(work_experience_id)
-        if workExperience:
-            db.session.delete(workExperience)
+        """
+        删除工作经历记录，仅当该公司下无项目时可删除
+        """
+        projects = WorkProjectDAO.get_projects_by_work_experience(work_experience_id)
+        if projects:
+            # 如果存在项目，禁止删除公司
+            return False
+
+        work_experience = WorkExperience.query.get(work_experience_id)
+        if work_experience:
+            db.session.delete(work_experience)
             db.session.commit()
             return True
         return False
@@ -146,22 +145,14 @@ class EducationExperienceDAO:
     def get_all_education_experiences():
         return EducationExperience.query.all()
 
-
     @staticmethod
     def add_education_experience(school_name, start_date, user_id, end_date=None, learn_details=None):
-        # 保证 start_date 和 end_date 都是 date 对象
-        if not isinstance(user_id, int):
-            raise ValueError("user_id must be an integer.")
+        # 确保 start_date 和 end_date 是 date 类型
+        if not isinstance(start_date, date):
+            raise ValueError("start_date must be a date object.")
 
-        if isinstance(start_date, str):
-            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-        elif not isinstance(start_date, datetime.date):
-            raise ValueError("start_date must be a date object or a valid date string.")
-        if end_date:
-            if isinstance(end_date, str):
-                end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-            elif not isinstance(end_date, datetime.date):
-                raise ValueError("end_date must be a date object or a valid date string.")
+        if end_date and not isinstance(end_date, date):
+            raise ValueError("end_date must be a date object.")
 
         education_experience = EducationExperience(
             school_name=school_name,
@@ -173,3 +164,45 @@ class EducationExperienceDAO:
         db.session.add(education_experience)
         db.session.commit()
         return education_experience
+
+    @staticmethod
+    def delete_education_experience_by_id(education_experience_id):
+        education_experience = EducationExperience.query.get(education_experience_id)
+        if education_experience:
+            db.session.delete(education_experience)
+            db.session.commit()
+            return True
+        return False
+
+
+# control WorkProject db
+class WorkProjectDAO:
+    @staticmethod
+    def get_projects_by_work_experience(work_experience_id):
+        """根据公司ID获取所有关联项目"""
+        return WorkProject.query.filter_by(work_experience_id=work_experience_id).all()
+
+    @staticmethod
+    def add_project(work_experience_id, project_name, achievement):
+        """添加新项目"""
+        # 确保公司存在
+        if not WorkExperience.query.get(work_experience_id):
+            raise ValueError("Work experience not found.")
+
+        project = WorkProject(
+            work_experience_id=work_experience_id,
+            project_name=project_name,
+            achievement=achievement
+        )
+        db.session.add(project)
+        db.session.commit()
+        return project
+
+    @staticmethod
+    def delete_project(project_id):
+        project = WorkProject.query.get(project_id)
+        if project:
+            db.session.delete(project)
+            db.session.commit()
+            return True
+        return False

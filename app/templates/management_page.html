@@ -2,19 +2,31 @@
 {% block content %}
     <h2>Management Page</h2>
 
+    <!-- catalog -->
+    <div class="catalog">
+        <ul style="list-style-type: none; padding: 0;">
+            <li><a href="#about-me-form">About Me</a></li>
+            <li><a href="#work-experience-form">Work Experience</a></li>
+            <li><a href="#work-project-form">Work Project</a></li>
+            <li><a href="#education-experience-form">Education Experience</a></li>
+            <li><a href="#skill-form">Add Skill</a></li>
+        </ul>
+    </div>
+
     <!-- About Me Form -->
-    <h3>About Me</h3>
     <form id="about-me-form" method="POST" action="{{ url_for('main.submit_form') }}">
+    <h3>About Me</h3>
         {{ about_me_form.hidden_tag() }}
         <input type="hidden" name="form_submit" value="submit_about_me">
         <p>{{ about_me_form.name.label }} {{ about_me_form.name }}</p>
         <p>{{ about_me_form.hometown.label }} {{ about_me_form.hometown }}</p>
+        <p>{{ about_me_form.email.label }} {{ about_me_form.email }}</p>
         <p><button type="submit" class="btn btn-primary">Save About Me</button></p>
     </form>
 
     <!-- Work Experience Form -->
-    <h3>Work Experience</h3>
     <form id="work-experience-form" method="POST" action="{{ url_for('main.submit_form') }}">
+    <h3>Work Experience</h3>
         {{ work_experience_form.hidden_tag() }}
         <input type="hidden" name="form_submit" value="submit_work_experience">
         <p>{{ work_experience_form.company_name.label }} {{ work_experience_form.company_name }}</p>
@@ -27,9 +39,19 @@
         <p><button type="submit" class="btn btn-primary">Save Work Experience</button></p>
     </form>
 
+    <!-- Work Project Form -->
+    <form id="work-project-form" method="POST" action="{{ url_for('main.add_project') }}">
+    <h3>Work Project</h3>
+        {{ work_project_form.hidden_tag() }}
+        <p>{{ work_project_form.work_experience_id.label }} {{ work_project_form.work_experience_id }}</p>
+        <p>{{ work_project_form.project_name.label }} {{ work_project_form.project_name }}</p>
+        <p>{{ work_project_form.achievement.label }} {{ work_project_form.achievement }}</p>
+        <p><button type="submit" class="btn btn-primary">Add Project</button></p>
+    </form>
+
     <!-- Education Experience Form -->
-    <h3>Education Experience</h3>
     <form id="education-experience-form" method="POST" action="{{ url_for('main.submit_form') }}">
+    <h3>Education Experience</h3>
         {{ education_experience_form.hidden_tag() }}
         <input type="hidden" name="form_submit" value="submit_education_experience">
         <p>{{ education_experience_form.school_name.label }} {{ education_experience_form.school_name }}</p>
@@ -44,8 +66,8 @@
     </form>
 
     <!-- Skill Form -->
-    <h3>Add Skill</h3>
     <form id="skill-form" method="POST" action="{{ url_for('main.submit_form') }}">
+    <h3>Add Skill</h3>
         {{ skill_form.hidden_tag() }}
         <input type="hidden" name="form_submit" value="submit_skill">
         <p>{{ skill_form.category.label }} {{ skill_form.category }}</p>
@@ -53,4 +75,5 @@
         <p>{{ skill_form.description.label }} {{ skill_form.description }}</p>
         <p><button type="submit" class="btn btn-primary">Save Skill</button></p>
     </form>
+
 {% endblock %}

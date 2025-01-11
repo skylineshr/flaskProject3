@@ -57,13 +57,7 @@ class AboutMe(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(100), nullable=False)
     hometown = db.Column(db.String(100))
-
-# Work Detail Model - Represents details for a specific work experience
-class WorkDetail(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    work_experience_id = db.Column(db.Integer, db.ForeignKey('work_experience.id'), nullable=False)
-    responsibility = db.Column(db.String(200), nullable=False)
-    achievement = db.Column(db.Text, nullable=True)  # Optional achievement
+    email = db.Column(db.String(120), unique=True, nullable=False)
 
 # Education Experience Model - Represents the user's educational background
 class EducationExperience(db.Model):
@@ -89,3 +83,11 @@ class Skill(db.Model):
     title = db.Column(db.String(100), nullable=False)
     description = db.Column(db.Text)
     user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+
+# Work Project Model - Represents projects under each work experience
+class WorkProject(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    project_name = db.Column(db.String(150), nullable=False)
+    achievement = db.Column(db.Text, nullable=True)
+    work_experience_id = db.Column(db.Integer, db.ForeignKey('work_experience.id'), nullable=False)
+    work_experience = db.relationship('WorkExperience', backref=db.backref('projects', lazy=True))
